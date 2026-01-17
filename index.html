@@ -1,0 +1,1399 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Новый год</title>
+
+  <style>
+    :root{
+      --bg-url: url("assets/bg.jpg"); /* твой фон */
+      --glass: rgba(255,255,255,.10);
+      --glass2: rgba(0,0,0,.25);
+      --border: rgba(255,255,255,.16);
+      --txt: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.72);
+      --ok: rgba(140,255,190,.95);
+      --bad: rgba(255,120,120,.95);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--txt);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: #000 var(--bg-url) center / cover no-repeat fixed;
+      overflow:hidden;
+    }
+    /* затемнение поверх фона для читабельности */
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      background: radial-gradient(900px 600px at 20% 10%, rgba(0,0,0,.25), transparent 55%),
+                  radial-gradient(900px 600px at 80% 30%, rgba(0,0,0,.25), transparent 60%),
+                  rgba(0,0,0,.35);
+      pointer-events:none;
+      z-index:0;
+    }
+
+    a{color:inherit}
+
+    .layer{position:fixed; inset:0; z-index:1;}
+    .center{display:flex; align-items:center; justify-content:center}
+    .hidden{display:none !important}
+    .fade{
+      opacity:0; transform: translateY(12px) scale(.99);
+      transition: opacity .45s ease, transform .45s ease;
+      pointer-events:none;
+    }
+    .fade.on{opacity:1; transform: translateY(0) scale(1); pointer-events:auto;}
+
+    .glass{
+      background: var(--glass);
+      border:1px solid var(--border);
+      border-radius: 22px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 22px 80px rgba(0,0,0,.45);
+    }
+
+    .btn{
+      border:1px solid var(--border);
+      background: linear-gradient(135deg, rgba(255,255,255,.22), rgba(255,255,255,.06));
+      color:var(--txt);
+      padding:12px 16px;
+      border-radius: 14px;
+      cursor:pointer;
+      font-weight:650;
+      user-select:none;
+      transition: transform .12s ease, filter .12s ease;
+      box-shadow: 0 12px 32px rgba(0,0,0,.35);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:hover{transform: translateY(-1px)}
+    .btn:active{transform: translateY(0)}
+    .btn.secondary{ background: rgba(0,0,0,.28); box-shadow:none; }
+
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .muted{color:var(--muted)}
+    .title{font-size: clamp(26px, 4vw, 44px); margin:0 0 10px}
+    .h2{font-size: 20px; margin:0 0 10px}
+    .card{padding:18px}
+    .badge{
+      padding:8px 10px; border-radius: 999px;
+      background: rgba(0,0,0,.30);
+      border:1px solid rgba(255,255,255,.12);
+      font-size:13px;
+      white-space:nowrap;
+    }
+    .toast{
+      position:fixed;
+      left:50%; bottom: calc(14px + env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(10px);
+      padding:10px 12px;
+      border-radius: 14px;
+      font-size:13px;
+      opacity:0; pointer-events:none;
+      transition: opacity .25s ease, transform .25s ease;
+      z-index:999;
+    }
+    .toast.on{opacity:1; transform: translateX(-50%) translateY(-2px);}
+
+    /* интро */
+    #introWrap{
+      background:
+        radial-gradient(700px 360px at 50% 28%, rgba(255,255,255,.14), transparent 60%),
+        rgba(0,0,0,.60);
+      z-index:20;
+    }
+    #introCard{max-width:820px; width:min(92vw, 820px)}
+
+    /* хаб без рамки */
+    #hub{z-index:10}
+    #hubInner{
+      width:100vw;
+      height:100vh;
+      position:relative;
+      padding:
+        calc(16px + env(safe-area-inset-top))
+        16px
+        calc(16px + env(safe-area-inset-bottom))
+        16px;
+      overflow:hidden;
+
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      backdrop-filter: none;
+    }
+    .topbar{
+      position:absolute; left:14px; right:14px; top: calc(10px + env(safe-area-inset-top));
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; z-index:2;
+    }
+
+    #greeting{
+      position:absolute; left:50%; top:42%;
+      transform: translate(-50%,-50%);
+      text-align:center;
+      width:min(740px, 94%);
+      padding:18px;
+    }
+    #greeting .muted{line-height:1.45}
+
+    /* поле фразы */
+    #phraseBox{
+      position:absolute; left:50%;
+      bottom: calc(12px + env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      width:min(900px, 94%);
+      padding:12px;
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+      opacity:.25; pointer-events:none;
+      transition: opacity .35s ease;
+    }
+    #phraseBox.on{opacity:1; pointer-events:auto}
+    #phraseInput{
+      flex:1;
+      background: rgba(0,0,0,.30);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding:12px 12px;
+      color:var(--txt);
+      outline:none;
+      font-size:15px;
+    }
+
+    /* вопросики */
+    .qm{
+      position:absolute;
+      width: clamp(52px, 12vw, 58px);
+      height: clamp(52px, 12vw, 58px);
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.24);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer;
+      box-shadow: 0 14px 40px rgba(0,0,0,.35);
+      transition: transform .12s ease, filter .12s ease, opacity .25s ease;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .qm:hover{transform: scale(1.05)}
+    .qm:active{transform: scale(1.00)}
+    .qm span{font-size:28px; font-weight:900; opacity:.92}
+    .qm.done{opacity:.35; cursor:default; filter:saturate(.3)}
+    .float1{animation: float1 3.6s ease-in-out infinite}
+    .float2{animation: float2 4.1s ease-in-out infinite}
+    .float3{animation: float3 3.2s ease-in-out infinite}
+    @keyframes float1{0%,100%{transform: translateY(0)}50%{transform: translateY(-14px)}}
+    @keyframes float2{0%,100%{transform: translateY(0)}50%{transform: translateY(-18px)}}
+    @keyframes float3{0%,100%{transform: translateY(0)}50%{transform: translateY(-12px)}}
+
+    /* мобильная перекладка вопросиков, чтобы не лезли на поздравление */
+    @media (max-width: 560px){
+      #greeting{ top: 38%; }
+      .qm[data-action="snake"]{ left: 7% !important; top: 16% !important; }
+      .qm[data-action="mines"]{ left: 83% !important; top: 16% !important; }
+
+      .qm[data-action="word_mama"]{ left: 10% !important; top: 58% !important; }
+      .qm[data-action="word_ani"]{ left: 84% !important; top: 58% !important; }
+      .qm[data-action="word_zhena"]{ left: 24% !important; top: 74% !important; }
+      .qm[data-action="word_chemina"]{ left: 70% !important; top: 74% !important; }
+    }
+
+    /* сцены */
+    .scene{
+      z-index:30;
+      background: rgba(0,0,0,.62);
+      backdrop-filter: blur(10px);
+      padding: 12px;
+    }
+    .scene .panel{
+      width:min(980px, 96vw);
+      max-height: 88vh;
+      overflow:auto;
+      padding: 14px;
+      border-radius: 22px;
+    }
+    .grid2{display:grid; grid-template-columns: 1fr 1fr; gap:12px}
+    @media (max-width: 860px){ .grid2{grid-template-columns:1fr} }
+
+    /* змейка */
+    #snakeCanvas{
+      width: min(480px, 92vw);
+      height: min(480px, 46vh);
+      background: rgba(0,0,0,.28);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 18px;
+      display:block;
+      touch-action: none;
+    }
+    .dpad{
+      display:grid;
+      grid-template-columns: 60px 60px 60px;
+      grid-template-rows: 60px 60px 60px;
+      gap:10px;
+      justify-content:center;
+      margin-top:12px;
+      padding-bottom: calc(4px + env(safe-area-inset-bottom));
+    }
+    .dpad .k{
+      width:60px;height:60px;border-radius:18px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.28);
+      display:flex;align-items:center;justify-content:center;
+      font-weight:900;font-size:18px; user-select:none; cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dpad .k:active{transform: scale(.98)}
+    .dpad .empty{opacity:0; pointer-events:none}
+
+    /* сапёр (логика) */
+    #mineBoard{
+      display:grid;
+      gap:6px;
+      justify-content:start;
+      align-content:start;
+      user-select:none;
+      margin-top:12px;
+      touch-action: manipulation;
+    }
+    .cell{
+      width: clamp(36px, 9.5vw, 44px);
+      height: clamp(36px, 9.5vw, 44px);
+      border-radius: 14px;
+      background: rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.11);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:900;
+      cursor:pointer;
+      transition: transform .08s ease, background .2s ease, opacity .2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cell:hover{transform: translateY(-1px)}
+    .cell.revealed{
+      background: rgba(0,0,0,.32);
+      cursor:default; transform:none;
+    }
+    .cell.flagged{background: rgba(255,215,90,.18)}
+    .cell.mine{background: rgba(255,90,90,.22)}
+    .cell.num1{color: rgba(170,220,255,.95)}
+    .cell.num2{color: rgba(140,255,190,.95)}
+    .cell.num3{color: rgba(255,170,170,.95)}
+    .cell.num4{color: rgba(210,190,255,.95)}
+
+    /* галереи */
+    .gallery{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap:12px;
+      margin-top:12px;
+    }
+    .tile{
+      border-radius: 18px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+      min-height: 160px;
+      transform: translateY(10px) scale(.98);
+      opacity:0;
+      animation: pop .45s ease forwards;
+    }
+    @keyframes pop{to{transform: translateY(0) scale(1); opacity:1}}
+    .tile img{width:100%; height:100%; object-fit:cover; display:block}
+    .tile video{width:100%; height:100%; display:block; background:black}
+
+    /* виселица */
+    #hangmanWrap{display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px}
+    @media (max-width: 860px){ #hangmanWrap{grid-template-columns:1fr} }
+
+    #wordMask{
+      font-size: clamp(26px, 6vw, 34px);
+      letter-spacing: 6px;
+      font-weight: 950;
+      margin: 8px 0 6px;
+      word-break: break-word;
+      text-align:center;
+    }
+    #usedLetters{
+      font-size: 13px;
+      line-height:1.4;
+      word-break: break-word;
+    }
+    .keys{
+      display:grid;
+      grid-template-columns: repeat(11, 1fr);
+      gap:6px;
+      margin-top:10px;
+    }
+    @media (max-width: 560px){ .keys{grid-template-columns: repeat(9, 1fr);} }
+    .key{
+      padding:10px 0;
+      border-radius: 12px;
+      background: rgba(255,255,255,.09);
+      border:1px solid rgba(255,255,255,.10);
+      text-align:center;
+      cursor:pointer;
+      font-weight:900;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .key.used{opacity:.35; cursor:default}
+    .key.good{outline:2px solid rgba(140,255,190,.35)}
+    .key.bad{outline:2px solid rgba(255,120,120,.30)}
+    #hangSvg{
+      width:100%;
+      max-width: 420px;
+      aspect-ratio: 4/3;
+      display:block;
+      margin: 0 auto;
+      background: rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 18px;
+    }
+
+    /* финальное видео */
+    #finalVideo{
+      width: min(980px, 94vw);
+      max-height: 70vh;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.12);
+      background:black;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="toast" id="toast"></div>
+
+  <!-- Интро -->
+  <div id="introWrap" class="layer center fade on">
+    <div id="introCard" class="glass card">
+      <h1 class="title">С Новым годом</h1>
+      <p class="muted">Надеюсь вам понравится то, что я поготовил. Нажимай "начать" и поехали</p>
+      <div class="row">
+        <button id="btnStart" class="btn">Начать</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Хаб -->
+  <div id="hub" class="layer fade hidden">
+    <div id="hubInner">
+      <div class="topbar">
+        <div class="badge" id="progressBadge">Прогресс: 0 / 6</div>
+        <button class="btn secondary" id="btnReset">Сброс</button>
+      </div>
+
+      <div id="greeting" class="glass card">
+        <div style="font-size:18px; font-weight:900; margin-bottom:8px;">С Новым годом!</div>
+        <div class="muted">
+          Тут вставь свой текст. Коротко и лично. И да — не надо «счастья-здоровья» как в бухгалтерии.
+        </div>
+        <div class="muted" style="margin-top:10px; font-size:13px">
+          Нажимай на “?” 
+        </div>
+      </div>
+
+      <!-- вопросики -->
+      <div class="qm float1" data-action="snake" style="left:10%; top:20%"><span>?</span></div>
+      <div class="qm float2" data-action="mines" style="left:82%; top:18%"><span>?</span></div>
+
+      <div class="qm float3" data-action="word_mama" style="left:14%; top:64%"><span>?</span></div>
+      <div class="qm float1" data-action="word_ani" style="left:82%; top:64%"><span>?</span></div>
+      <div class="qm float2" data-action="word_zhena" style="left:26%; top:78%"><span>?</span></div>
+      <div class="qm float3" data-action="word_chemina" style="left:70%; top:78%"><span>?</span></div>
+
+      <!-- поле фразы -->
+      <div id="phraseBox" class="glass">
+        <input id="phraseInput" placeholder="После 4 слов введи финальную фразу…" />
+        <button id="btnPhrase" class="btn">Проверить</button>
+      </div>
+
+      <!-- финальный подарок -->
+      <div id="finalGift" class="qm hidden" style="left:50%; top: calc(12% + env(safe-area-inset-top)); transform:translateX(-50%); width:72px; height:72px;">
+        <span style="font-size:30px;">🎁</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Сцена: змейка -->
+  <div id="sceneSnake" class="layer scene center fade hidden">
+    <div class="panel glass">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="h2">Змейка</div>
+          <div class="muted" style="font-size:13px">
+            Цель: <b id="snakeTargetTxt"></b>. На телефоне: снизу на вот этой херне потыкай в лево, в право. 
+          </div>
+        </div>
+        <div class="row">
+          <div class="badge">Счёт: <span id="snakeScore">0</span></div>
+          <button class="btn secondary" id="snakeBack">Назад</button>
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-top:12px;">
+        <div>
+          <canvas id="snakeCanvas" width="480" height="480"></canvas>
+
+          <div class="dpad" aria-label="D-pad">
+            <div class="k empty"></div>
+            <div class="k" data-dir="up">▲</div>
+            <div class="k empty"></div>
+            <div class="k" data-dir="left">◀</div>
+            <div class="k" data-dir="down">▼</div>
+            <div class="k" data-dir="right">▶</div>
+            <div class="k empty"></div>
+            <div class="k empty"></div>
+            <div class="k empty"></div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <button class="btn" id="snakeRestart">Рестарт</button>
+            <div id="snakeGift" class="btn hidden" style="margin-left:auto;">🎁 Открыть</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="glass card">
+            <div class="muted" style="line-height:1.5">
+            </div>
+          </div>
+          <div id="photoGallery" class="gallery hidden"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Сцена: сапёр (логика, легко) -->
+  <div id="sceneMines" class="layer scene center fade hidden">
+    <div class="panel glass">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="h2">Сапёр</div>
+          <div class="muted" style="font-size:13px">
+            Тап — открыть. Долгое нажатие — флаг. На ПК: ПКМ — флаг.
+            Цифра = сколько мин вокруг. Первый клик дает в рот, или наобороот. 
+          </div>
+        </div>
+        <div class="row">
+          <div class="badge" id="mineStatus">Игра идёт</div>
+          <button class="btn secondary" id="minesBack">Назад</button>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <button class="btn" id="minesRestart">Новая игра</button>
+        <div id="minesGift" class="btn hidden" style="margin-left:auto;">🎁 Открыть видео</div>
+      </div>
+
+      <div id="mineBoard"></div>
+      <div id="videoGallery" class="gallery hidden"></div>
+    </div>
+  </div>
+
+  <!-- Сцена: виселица -->
+  <div id="sceneWord" class="layer scene center fade hidden">
+    <div class="panel glass">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="h2" id="wordTitle">Виселица</div>
+          <div class="muted" style="font-size:13px">
+            Мир так желток... я никому не ужин.... 
+          </div>
+        </div>
+        <div class="row">
+          <div class="badge">Жизни: <span id="livesTxt">0</span></div>
+          <button class="btn secondary" id="wordBack">Назад</button>
+        </div>
+      </div>
+
+      <div id="hangmanWrap">
+        <div class="glass card">
+          <svg id="hangSvg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+            <g stroke="rgba(255,255,255,0.85)" stroke-width="8" fill="none" stroke-linecap="round">
+              <path d="M60 260 L220 260" />
+              <path d="M110 260 L110 40" />
+              <path d="M110 40 L260 40" />
+              <path d="M260 40 L260 80" />
+              <!-- части тела -->
+              <circle id="p1" cx="260" cy="105" r="24" opacity="0"/>
+              <path id="p2" d="M260 130 L260 190" opacity="0"/>
+              <path id="p3" d="M260 150 L232 170" opacity="0"/>
+              <path id="p4" d="M260 150 L288 170" opacity="0"/>
+              <path id="p5" d="M260 190 L238 230" opacity="0"/>
+              <path id="p6" d="M260 190 L282 230" opacity="0"/>
+            </g>
+          </svg>
+
+          <div id="wordMask">_ _ _</div>
+          <div class="muted" id="wordHint" style="text-align:center"></div>
+          <div class="muted" id="usedLetters" style="margin-top:10px"></div>
+
+          <div class="row" style="margin-top:12px; justify-content:space-between">
+            <button class="btn secondary" id="wordReset">Сбросить</button>
+            <div id="wordDoneBtn" class="btn hidden">Засчитать</div>
+          </div>
+        </div>
+
+        <div class="glass card">
+          <div class="muted">Выбирай буквы:</div>
+          <div class="keys" id="letters"></div>
+          <div class="muted" style="margin-top:10px; font-size:13px">
+            Подсказка: я чупачупс со вкусом лука - соси и плач тупая сука
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Сцена: финал -->
+  <div id="sceneFinal" class="layer scene center fade hidden">
+    <div class="panel glass">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="h2">Финальный подарок</div>
+          <div class="muted" style="font-size:13px">
+          </div>
+        </div>
+        <button class="btn secondary" id="finalBack">Назад</button>
+      </div>
+
+      <div style="margin-top:10px;">
+        <video id="finalVideo" controls playsinline preload="metadata"></video>
+        <div class="row" style="margin-top:10px;">
+          <button id="finalPlay" class="btn">▶ Запустить</button>
+          <button id="finalMute" class="btn secondary">🔇/🔊</button>
+          <button id="finalEnd" class="btn secondary" style="margin-left:auto;">Завершить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ==========================
+   АССЕТЫ / НАСТРОЙКИ
+   ========================== */
+const ASSETS = {
+  photos: [
+    "assets/photos/1.jpg",
+    "assets/photos/2.jpg",
+  ],
+  mineVideos: [
+    "assets/videos/1.mp4",
+    "assets/videos/2.mp4",
+  ],
+  finalVideo: "assets/videos/final.mp4",
+};
+// ВАЖНО: на каждом из 5 сайтов поменяй это значение на свою часть.
+// Пример: "1/5: https://ex", "2/5: ample.com/pa", "3/5: th?x=1", ...
+const LINK_PART = "1/5: ТВОЯ_ЧАСТЬ_ССЫЛКИ";
+// змейка: легко, без смерти, цель небольшая
+const SNAKE_TARGET = 10;
+const SNAKE_SPEED_MS = 120;
+
+// сапёр: лёгкий
+const MINES_ROWS = 8;
+const MINES_COLS = 8;
+const MINES_BOMBS = 1;
+
+// виселица: сложнее (жизни)
+const HANG_LIVES = 6;
+
+// слова (твои)
+const WORDS = {
+  word_mama:   {word:"мама",   title:"Слово №1", hint:"без подсказок не будет. ну почти."},
+  word_ani:    {word:"ани",    title:"Слово №2", hint:"короткое имя."},
+  word_zhena:  {word:"жена",   title:"Слово №3", hint:"статус."},
+  word_chemina:{word:"чемина", title:"Слово №4", hint:"самое мерзкое — длиннее остальных."},
+};
+const FINAL_PHRASE = "мама ани жена чемина";
+
+/* ==========================
+   УТИЛИТЫ / СОСТОЯНИЕ
+   ========================== */
+const $ = (q)=>document.querySelector(q);
+const $$ = (q)=>Array.from(document.querySelectorAll(q));
+
+const intro = $("#introWrap");
+const hub = $("#hub");
+const sceneSnake = $("#sceneSnake");
+const sceneMines = $("#sceneMines");
+const sceneWord  = $("#sceneWord");
+const sceneFinal = $("#sceneFinal");
+
+const toastEl = $("#toast");
+let toastTimer = null;
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>toastEl.classList.remove("on"), 1500);
+}
+
+const state = {
+  phraseSolved: false,
+  done: { snake:false, mines:false, word_mama:false, word_ani:false, word_zhena:false, word_chemina:false },
+  wordDoneCount(){ return ["word_mama","word_ani","word_zhena","word_chemina"].filter(k=>this.done[k]).length; },
+  totalDoneCount(){ return Object.values(this.done).filter(Boolean).length; }
+};
+
+function show(el){ el.classList.remove("hidden"); requestAnimationFrame(()=>el.classList.add("on")); }
+function hide(el){ el.classList.remove("on"); setTimeout(()=>el.classList.add("hidden"), 220); }
+
+function normalize(s){
+  return (s||"")
+    .toLowerCase()
+    .replace(/ё/g,"е")
+    .replace(/\s+/g," ")
+    .trim();
+}
+
+function updateProgress(){
+  $("#progressBadge").textContent = `Прогресс: ${state.totalDoneCount()} / 6`;
+  $$(".qm").forEach(qm=>{
+    const a = qm.dataset.action;
+    if(a && state.done[a]) qm.classList.add("done");
+  });
+
+  const wordsReady = state.wordDoneCount() === 4;
+  $("#phraseBox").classList.toggle("on", wordsReady);
+
+  const allReady = state.phraseSolved && state.done.snake && state.done.mines;
+  $("#finalGift").classList.toggle("hidden", !allReady);
+}
+
+/* ==========================
+   НАВИГАЦИЯ
+   ========================== */
+$("#btnStart").addEventListener("click", ()=>{
+  hide(intro);
+  show(hub);
+  updateProgress();
+});
+
+$("#btnReset").addEventListener("click", ()=>{
+  state.done = { snake:false, mines:false, word_mama:false, word_ani:false, word_zhena:false, word_chemina:false };
+  state.phraseSolved = false;
+  $$(".qm").forEach(q=>q.classList.remove("done"));
+  $("#finalGift").classList.add("hidden");
+  $("#phraseInput").value = "";
+  $("#phraseBox").classList.remove("on");
+  [sceneSnake,sceneMines,sceneWord,sceneFinal].forEach(hide);
+  // сброс выдачи подарков
+  $("#photoGallery").classList.add("hidden"); $("#photoGallery").innerHTML="";
+  $("#videoGallery").classList.add("hidden"); $("#videoGallery").innerHTML="";
+  $("#snakeGift").classList.add("hidden");
+  $("#minesGift").classList.add("hidden");
+  stopSnake();
+  updateProgress();
+  toast("Сброшено");
+});
+
+$$("#hubInner .qm").forEach(qm=>{
+  qm.addEventListener("click", ()=>{
+    const action = qm.dataset.action;
+    if(!action) return;
+    if(state.done[action]) return;
+    if(action === "snake") return openSnake();
+    if(action === "mines") return openMines();
+    if(action.startsWith("word_")) return openWord(action);
+  });
+});
+
+// (Удалено: первый обработчик #btnPhrase в секции НАВИГАЦИЯ)
+
+$("#finalGift").addEventListener("click", ()=> openFinal());
+
+/* ==========================
+   ЗМЕЙКА (мобилка: D-pad + свайпы)
+   ========================== */
+let snake = null;
+
+function openSnake(){
+  show(sceneSnake);
+  $("#snakeTargetTxt").textContent = SNAKE_TARGET;
+  initSnake();
+}
+$("#snakeBack").addEventListener("click", ()=>{ hide(sceneSnake); stopSnake(); });
+$("#snakeRestart").addEventListener("click", ()=> initSnake());
+
+function stopSnake(){
+  if(snake?.timer) clearInterval(snake.timer);
+  snake = null;
+}
+
+function initSnake(){
+  stopSnake();
+
+  $("#snakeScore").textContent = "0";
+  $("#snakeGift").classList.add("hidden");
+  $("#photoGallery").classList.add("hidden");
+  $("#photoGallery").innerHTML = "";
+
+  const canvas = $("#snakeCanvas");
+  const ctx = canvas.getContext("2d");
+
+  const grid = 20;    // 20*24=480
+  const cell = 24;
+  const W = canvas.width, H = canvas.height;
+
+  const dirMap = { ArrowUp:[0,-1], ArrowDown:[0,1], ArrowLeft:[-1,0], ArrowRight:[1,0] };
+  const rndPos = ()=>({x: Math.floor(Math.random()*grid), y: Math.floor(Math.random()*grid)});
+  const same = (a,b)=>a.x===b.x && a.y===b.y;
+
+  snake = {
+    body: [{x:10,y:10},{x:9,y:10},{x:8,y:10}],
+    dir: [1,0],
+    nextDir: [1,0],
+    food: rndPos(),
+    score: 0,
+    timer: null
+  };
+
+  function occupied(p){ return snake.body.some(s=>same(s,p)); }
+  while(occupied(snake.food)) snake.food = rndPos();
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    ctx.globalAlpha = 0.10;
+    ctx.strokeStyle = "#fff";
+    for(let i=0;i<=grid;i++){
+      ctx.beginPath(); ctx.moveTo(i*cell,0); ctx.lineTo(i*cell,H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,i*cell); ctx.lineTo(W,i*cell); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.fillRect(snake.food.x*cell+6, snake.food.y*cell+6, cell-12, cell-12);
+
+    snake.body.forEach((p,i)=>{
+      ctx.fillStyle = i===0 ? "rgba(140,255,190,0.95)" : "rgba(255,255,255,0.78)";
+      ctx.fillRect(p.x*cell+3, p.y*cell+3, cell-6, cell-6);
+    });
+  }
+
+  function setDir(vec){
+    const [nx,ny] = vec;
+    const [dx,dy] = snake.dir;
+    if(nx===-dx && ny===-dy) return;
+    snake.nextDir = vec;
+  }
+
+  function step(){
+    const [nx,ny] = snake.nextDir;
+    const [dx,dy] = snake.dir;
+    if(!(nx===-dx && ny===-dy)) snake.dir = [nx,ny];
+
+    const head = snake.body[0];
+    let newH = { x: head.x + snake.dir[0], y: head.y + snake.dir[1] };
+
+    // wrap-around
+    newH.x = (newH.x + grid) % grid;
+    newH.y = (newH.y + grid) % grid;
+
+    snake.body.unshift(newH);
+
+    if(same(newH, snake.food)){
+      snake.score += 1;
+      $("#snakeScore").textContent = String(snake.score);
+      snake.food = rndPos();
+      while(occupied(snake.food)) snake.food = rndPos();
+
+      if(snake.score >= SNAKE_TARGET){
+        $("#snakeGift").classList.remove("hidden");
+      }
+    } else {
+      snake.body.pop();
+    }
+
+    if(snake.body.length > 70) snake.body.length = 70;
+    draw();
+  }
+
+  window.onkeydown = (e)=>{
+    if(!dirMap[e.key]) return;
+    e.preventDefault();
+    setDir(dirMap[e.key]);
+  };
+
+  // D-pad
+  $$(".dpad .k[data-dir]").forEach(k=>{
+    k.addEventListener("pointerdown", ()=>{
+      const d = k.dataset.dir;
+      if(d==="up") setDir([0,-1]);
+      if(d==="down") setDir([0,1]);
+      if(d==="left") setDir([-1,0]);
+      if(d==="right") setDir([1,0]);
+    });
+  });
+
+  // swipe на canvas
+  let sx=0, sy=0;
+  canvas.addEventListener("pointerdown", (e)=>{
+    sx = e.clientX; sy = e.clientY;
+  });
+  canvas.addEventListener("pointerup", (e)=>{
+    const dxp = e.clientX - sx;
+    const dyp = e.clientY - sy;
+    if(Math.abs(dxp) < 20 && Math.abs(dyp) < 20) return;
+
+    if(Math.abs(dxp) > Math.abs(dyp)){
+      setDir(dxp > 0 ? [1,0] : [-1,0]);
+    } else {
+      setDir(dyp > 0 ? [0,1] : [0,-1]);
+    }
+  });
+
+  draw();
+  snake.timer = setInterval(step, SNAKE_SPEED_MS);
+}
+
+$("#snakeGift").addEventListener("click", ()=>{
+  state.done.snake = true;
+  updateProgress();
+  toast("Фотки открыты");
+
+  const g = $("#photoGallery");
+  g.innerHTML = "";
+  ASSETS.photos.forEach((src,i)=>{
+    const d = document.createElement("div");
+    d.className = "tile";
+    d.style.animationDelay = `${i*90}ms`;
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = "photo";
+    d.appendChild(img);
+    g.appendChild(d);
+  });
+  g.classList.remove("hidden");
+});
+
+/* ==========================
+   САПЁР (логика + лёгкость + first click safe)
+   - Тап: открыть
+   - Long press: флаг
+   - ПКМ: флаг
+   - Chord: если на цифре флажков = цифре, тап по цифре откроет соседей
+   ========================== */
+let mines = null;
+
+function openMines(){
+  show(sceneMines);
+  initMines();
+}
+$("#minesBack").addEventListener("click", ()=> hide(sceneMines));
+$("#minesRestart").addEventListener("click", ()=> initMines());
+
+function initMines(){
+  $("#minesGift").classList.add("hidden");
+  $("#videoGallery").classList.add("hidden");
+  $("#videoGallery").innerHTML = "";
+  $("#mineStatus").textContent = "Игра идёт";
+
+  const rows = MINES_ROWS, cols = MINES_COLS, bombs = MINES_BOMBS;
+  const boardEl = $("#mineBoard");
+  boardEl.style.gridTemplateColumns = `repeat(${cols}, minmax(36px, 44px))`;
+  boardEl.innerHTML = "";
+
+  mines = {
+    rows, cols, bombs,
+    over:false,
+    first:true,
+    revealedSafe:0,
+    cells: Array.from({length: rows}, ()=>Array.from({length: cols}, ()=>({
+      mine:false, revealed:false, flagged:false, n:0
+    })))
+  };
+
+  function inb(r,c){ return r>=0 && c>=0 && r<rows && c<cols; }
+  function neighbors(r,c){
+    const out=[];
+    for(let dr=-1; dr<=1; dr++){
+      for(let dc=-1; dc<=1; dc++){
+        if(!dr && !dc) continue;
+        const rr=r+dr, cc=c+dc;
+        if(inb(rr,cc)) out.push([rr,cc]);
+      }
+    }
+    return out;
+  }
+
+  function placeMinesAvoiding(sr,sc){
+    // делаем стартовую клетку и её соседей гарантированно чистыми (так легче)
+    const banned = new Set([`${sr},${sc}`]);
+    neighbors(sr,sc).forEach(([r,c])=>banned.add(`${r},${c}`));
+
+    let placed = 0;
+    while(placed < bombs){
+      const r = Math.floor(Math.random()*rows);
+      const c = Math.floor(Math.random()*cols);
+      const key = `${r},${c}`;
+      if(banned.has(key)) continue;
+      if(mines.cells[r][c].mine) continue;
+      mines.cells[r][c].mine = true;
+      placed++;
+    }
+
+    // numbers
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        let n=0;
+        for(const [rr,cc] of neighbors(r,c)){
+          if(mines.cells[rr][cc].mine) n++;
+        }
+        mines.cells[r][c].n = n;
+      }
+    }
+  }
+
+  function renderCell(r,c,el){
+    const cell = mines.cells[r][c];
+    el.classList.toggle("revealed", cell.revealed);
+    el.classList.toggle("flagged", cell.flagged);
+    el.classList.toggle("mine", cell.revealed && cell.mine);
+
+    el.classList.remove("num1","num2","num3","num4");
+
+    if(!cell.revealed){
+      el.textContent = cell.flagged ? "⚑" : "";
+      return;
+    }
+
+    if(cell.mine){
+      el.textContent = "💥";
+      return;
+    }
+
+    if(cell.n === 0){
+      el.textContent = "";
+    } else {
+      el.textContent = String(cell.n);
+      el.classList.add(`num${Math.min(4,cell.n)}`);
+    }
+  }
+
+  function flood(r,c){
+    const stack=[[r,c]];
+    const seen=new Set();
+    while(stack.length){
+      const [x,y]=stack.pop();
+      const key=`${x},${y}`;
+      if(seen.has(key)) continue;
+      seen.add(key);
+
+      const cell = mines.cells[x][y];
+      if(cell.revealed || cell.flagged) continue;
+      if(cell.mine) continue;
+
+      cell.revealed = true;
+      mines.revealedSafe++;
+      const el = boardEl.querySelector(`[data-r="${x}"][data-c="${y}"]`);
+      renderCell(x,y,el);
+
+      if(cell.n === 0){
+        for(const [rr,cc] of neighbors(x,y)){
+          const nb = mines.cells[rr][cc];
+          if(!nb.revealed && !nb.flagged && !nb.mine) stack.push([rr,cc]);
+        }
+      }
+    }
+  }
+
+  function checkWin(){
+    const safeTotal = rows*cols - bombs;
+    if(mines.revealedSafe >= safeTotal){
+      mines.over = true;
+      $("#mineStatus").textContent = "Победа";
+      $("#minesGift").classList.remove("hidden");
+    }
+  }
+
+  function reveal(r,c){
+    if(mines.over) return;
+    const cell = mines.cells[r][c];
+    if(cell.flagged) return;
+
+    if(mines.first){
+      mines.first=false;
+      placeMinesAvoiding(r,c);
+      // пересчёт для всех уже созданных клеток
+      for(let rr=0; rr<rows; rr++){
+        for(let cc=0; cc<cols; cc++){
+          const ee = boardEl.querySelector(`[data-r="${rr}"][data-c="${cc}"]`);
+          renderCell(rr,cc,ee);
+        }
+      }
+    }
+
+    if(cell.revealed){
+      // chord: если флагов вокруг столько же, сколько число — открыть остальных
+      if(cell.n > 0){
+        const nbs = neighbors(r,c);
+        const flags = nbs.filter(([rr,cc])=>mines.cells[rr][cc].flagged).length;
+        if(flags === cell.n){
+          for(const [rr,cc] of nbs){
+            const nb = mines.cells[rr][cc];
+            if(!nb.flagged && !nb.revealed) reveal(rr,cc);
+          }
+        }
+      }
+      return;
+    }
+
+    cell.revealed = true;
+    const el = boardEl.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+    renderCell(r,c,el);
+
+    if(cell.mine){
+      mines.over = true;
+      $("#mineStatus").textContent = "Бах. Перезапускай.";
+      // показать все мины
+      for(let rr=0; rr<rows; rr++){
+        for(let cc=0; cc<cols; cc++){
+          const t = mines.cells[rr][cc];
+          if(t.mine){
+            t.revealed = true;
+            const ee = boardEl.querySelector(`[data-r="${rr}"][data-c="${cc}"]`);
+            renderCell(rr,cc,ee);
+          }
+        }
+      }
+      return;
+    }
+
+    mines.revealedSafe++;
+
+    if(cell.n === 0){
+      // flood fill соседей
+      for(const [rr,cc] of neighbors(r,c)){
+        const nb = mines.cells[rr][cc];
+        if(!nb.revealed && !nb.flagged && !nb.mine) flood(rr,cc);
+      }
+    }
+
+    checkWin();
+  }
+
+  function toggleFlag(r,c){
+    if(mines.over) return;
+    if(mines.first) return; // до первого открытия не даём флажки — меньше хаоса
+    const cell = mines.cells[r][c];
+    if(cell.revealed) return;
+    cell.flagged = !cell.flagged;
+    const el = boardEl.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+    renderCell(r,c,el);
+  }
+
+  // DOM
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const el = document.createElement("div");
+      el.className = "cell";
+      el.dataset.r = r; el.dataset.c = c;
+
+      // ПК
+      el.addEventListener("click", (e)=>{
+        e.preventDefault();
+        reveal(r,c);
+      });
+      el.addEventListener("contextmenu", (e)=>{
+        e.preventDefault();
+        toggleFlag(r,c);
+      });
+
+      // мобилка: long-press = flag
+      let pressTimer = null;
+      let pressed = false;
+
+      el.addEventListener("pointerdown", (e)=>{
+        pressed = true;
+        pressTimer = setTimeout(()=>{
+          if(!pressed) return;
+          toggleFlag(r,c);
+          pressed = false;
+        }, 420);
+      });
+      el.addEventListener("pointerup", ()=>{
+        clearTimeout(pressTimer);
+        if(!pressed) return; // long press already handled
+        pressed = false;
+      });
+      el.addEventListener("pointercancel", ()=>{
+        clearTimeout(pressTimer);
+        pressed = false;
+      });
+
+      $("#mineBoard").appendChild(el);
+      renderCell(r,c,el);
+    }
+  }
+}
+
+$("#minesGift").addEventListener("click", ()=>{
+  state.done.mines = true;
+  updateProgress();
+  toast("Видео открыты");
+
+  const g = $("#videoGallery");
+  g.innerHTML = "";
+  ASSETS.mineVideos.forEach((src,i)=>{
+    const d = document.createElement("div");
+    d.className = "tile";
+    d.style.animationDelay = `${i*90}ms`;
+    const v = document.createElement("video");
+    v.src = src;
+    v.controls = true;
+    v.playsInline = true;
+    v.preload = "metadata";
+    d.appendChild(v);
+    g.appendChild(d);
+  });
+  g.classList.remove("hidden");
+});
+
+/* ==========================
+   ВИСЕЛИЦА (сложнее)
+   ========================== */
+const RU = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
+let hang = null;
+
+function openWord(key){
+  show(sceneWord);
+  startHang(key);
+}
+$("#wordBack").addEventListener("click", ()=> hide(sceneWord));
+$("#wordReset").addEventListener("click", ()=>{ if(hang) startHang(hang.key); });
+
+function startHang(key){
+  const meta = WORDS[key];
+  const word = normalize(meta.word).replace(/ё/g,"е");
+
+  hang = {
+    key,
+    title: meta.title,
+    hint: meta.hint,
+    word,
+    guessed: new Set(),
+    used: new Set(),
+    wrong: 0,
+    lives: HANG_LIVES
+  };
+
+  $("#wordTitle").textContent = meta.title;
+  $("#wordHint").textContent = meta.hint;
+  $("#wordDoneBtn").classList.add("hidden");
+  $("#usedLetters").textContent = "Использовано: —";
+  $("#livesTxt").textContent = String(hang.lives);
+
+  // сброс рисунка
+  for(let i=1;i<=6;i++) $("#p"+i).setAttribute("opacity","0");
+
+  renderHangWord();
+  renderHangKeys();
+}
+
+function renderHangWord(){
+  const w = hang.word;
+  let out = "";
+  let done = true;
+  for(const ch of w){
+    if(ch === " "){ out += "  "; continue; }
+    if(hang.guessed.has(ch)){
+      out += ch.toUpperCase() + " ";
+    } else {
+      out += "_ ";
+      done = false;
+    }
+  }
+  $("#wordMask").textContent = out.trim();
+
+  const used = Array.from(hang.used).sort().join(", ");
+  $("#usedLetters").textContent = "Использовано: " + (used || "—");
+
+  $("#livesTxt").textContent = String(Math.max(0, hang.lives));
+
+  if(hang.lives <= 0){
+    toast("ХАХАХАХАХХ ТЫ ПРОИГАЛ, ЛОООХ. ");
+  }
+
+  if(done){
+    $("#wordDoneBtn").classList.remove("hidden");
+  }
+}
+
+function renderHangKeys(){
+  const box = $("#letters");
+  box.innerHTML = "";
+  const letters = RU.replace("ё","е");
+
+  for(const ch0 of letters){
+    const ch = ch0.replace("ё","е");
+    const k = document.createElement("div");
+    k.className = "key";
+    k.textContent = ch.toUpperCase();
+
+    if(hang.used.has(ch)) k.classList.add("used");
+
+    k.addEventListener("click", ()=>{
+      if(hang.lives <= 0) return;
+      if(hang.used.has(ch)) return;
+
+      hang.used.add(ch);
+
+      if(hang.word.includes(ch)){
+        hang.guessed.add(ch);
+        k.classList.add("good");
+      } else {
+        hang.wrong++;
+        hang.lives--;
+        k.classList.add("bad");
+        // показать часть тела по ошибке
+        const idx = Math.min(6, hang.wrong);
+        const part = $("#p"+idx);
+        if(part) part.setAttribute("opacity","1");
+      }
+      k.classList.add("used");
+      renderHangWord();
+    });
+
+    box.appendChild(k);
+  }
+}
+
+$("#wordDoneBtn").addEventListener("click", ()=>{
+  state.done[hang.key] = true;
+  updateProgress();
+  toast("Слово засчитано");
+  hide(sceneWord);
+});
+
+/* ==========================
+   ФИНАЛ
+   ========================== */
+function openFinal(){
+  show(sceneFinal);
+  const v = $("#finalVideo");
+  v.src = ASSETS.finalVideo;
+  v.muted = true;
+}
+$("#finalBack").addEventListener("click", ()=> hide(sceneFinal));
+
+$("#finalPlay").addEventListener("click", ()=>{
+  const v = $("#finalVideo");
+  v.play().catch(()=>toast("Нажми play прямо на видео."));
+});
+$("#finalMute").addEventListener("click", ()=>{
+  const v = $("#finalVideo");
+  v.muted = !v.muted;
+});
+$("#finalEnd").addEventListener("click", ()=> endSite());
+$("#finalVideo").addEventListener("ended", ()=> endSite());
+
+function endSite(){
+  showLinkPartScreen();
+}
+
+function showLinkPartScreen(){
+  // пытаемся красиво остановить видео
+  try {
+    const v = $("#finalVideo");
+    if (v) { v.pause(); v.currentTime = 0; }
+  } catch(e){}
+
+  // экран с частью ссылки
+  document.body.innerHTML = `
+    <div style="height:100vh;display:flex;align-items:center;justify-content:center;
+      font-family:system-ui;color:rgba(255,255,255,.92);
+      background: rgba(0,0,0,.78); backdrop-filter: blur(10px); padding:20px;">
+      <div style="text-align:center;max-width:780px;padding:22px;border:1px solid rgba(255,255,255,.12);
+        border-radius:22px;background:rgba(255,255,255,.06);">
+        <div style="font-size:30px;font-weight:950;margin-bottom:10px;">Финал</div>
+        <div style="opacity:.85;line-height:1.5;margin-bottom:12px;">
+          Теперь работайте в команде, лахи. 
+        </div>
+
+        <div id="partBox" style="
+          font-size:18px;font-weight:800;letter-spacing:.2px;
+          padding:14px 12px;border-radius:16px;
+          border:1px solid rgba(255,255,255,.14);
+          background: rgba(0,0,0,.28);
+          word-break: break-word;">
+        </div>
+
+        <div style="margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button id="copyBtn" style="padding:12px 16px;border-radius:14px;
+            border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.10);
+            color:white; cursor:pointer; font-weight:800;">
+            Скопировать
+          </button>
+
+          <button onclick="location.href='about:blank'" style="padding:12px 16px;border-radius:14px;
+            border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.25);
+            color:white; cursor:pointer; font-weight:800;">
+            Закрыть
+          </button>
+        </div>
+
+        <div id="copyMsg" style="margin-top:10px;opacity:.75;font-size:13px;"></div>
+      </div>
+    </div>
+  `;
+
+  const partBox = document.getElementById("partBox");
+  const copyBtn = document.getElementById("copyBtn");
+  const copyMsg = document.getElementById("copyMsg");
+
+  partBox.textContent = (typeof LINK_PART === "string" ? LINK_PART : "—");
+
+  copyBtn.addEventListener("click", async ()=>{
+    const text = partBox.textContent;
+    try{
+      await navigator.clipboard.writeText(text);
+      copyMsg.textContent = "Скопировано.";
+    } catch(e){
+      // запасной вариант: выделение
+      const range = document.createRange();
+      range.selectNodeContents(partBox);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      copyMsg.textContent = "Буфер обмена не доступен. Я выделил текст — скопируй вручную.";
+    }
+  });
+}
+
+/* ==========================
+   ФРАЗА / ОТКРЫТИЕ ФИНАЛЬНОГО ПОДАРКА
+   ========================== */
+$("#btnPhrase").addEventListener("click", ()=>{
+  if(state.wordDoneCount() !== 4) return;
+
+  const v = normalize($("#phraseInput").value);
+  if(v === normalize(FINAL_PHRASE)){
+    state.phraseSolved = true;
+    updateProgress();
+    if(state.done.snake && state.done.mines){
+      toast("Фраза верная. Забирай 🎁");
+    } else {
+      toast("Фраза верная, но сначала пройди игры.");
+    }
+  } else {
+    state.phraseSolved = false;
+    updateProgress();
+    toast("Не совпало.");
+  }
+});
+
+/* ==========================
+   ИНИТ
+   ========================== */
+updateProgress();
+</script>
+</body>
+</html>
